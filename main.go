@@ -1,76 +1,105 @@
 package main
-
 import (
-	"github.com/graarh/golang-socketio"
-	"github.com/graarh/golang-socketio/transport"
-	"log"
-	"net/http"
-	"bufio"
-	"os"
+	"./bot"
 	"fmt"
 	"strings"
-	"time"
+	"bufio"
+	"os"
 )
 
-type Message map[string]interface{}
-
 func main() {
-	customHeaders := make(http.Header)
-	customHeaders.Add("Accept-Encoding", "gzip, deflate")
-	customHeaders.Add("Accept-Language", "en-US,en;q=0.9")
-	customHeaders.Add("Cache-Control", "no-cache")
-	customHeaders.Add("Pragma", "no-cache")
-	customHeaders.Add("Origin", "http://nekto.me")
-	customHeaders.Add("Host", "im.nekto.me")
-	customHeaders.Add("User-Agent", "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Ubuntu Chromium/73.0.3683.86 Chrome/73.0.3683.86 Safari/537.36")
-	//set cookie header for trusted connection 
+	b := bot.NewBot()
+	b1 := bot.NewBot()
 
-	tptr := &transport.WebsocketTransport{
-		PingInterval: 20 * time.Second,
-		PingTimeout: 10 *time.Second,
-		ReceiveTimeout: transport.WsDefaultReceiveTimeout,
-		SendTimeout: transport.WsDefaultSendTimeout,
-		BufferSize: transport.WsDefaultBufferSize,
-		RequestHeader: customHeaders,
+	b.Hs["auth.successToken"] = func(msg bot.Message) {
+		fmt.Println("b - success token, great job!")
+		mg := msg["data"].(map[string]interface{})
+		b.Id = mg["id"].(float64)
+		b.Dialog_id = 0
+		b.StartSearch()
 	}
-	c, err := gosocketio.Dial(gosocketio.GetUrl("im.nekto.me", 80, false), tptr)
-	if err != nil {
-		log.Fatal(err)
+	b.Hs["dialog.opened"] = func(msg bot.Message) {
+		mg := msg["data"].(map[string]interface{})
+		b.Dialog_id = mg["id"].(float64)
+		fmt.Println("b - dialog opened")
 	}
-
-	err = c.On("notice", func(h *gosocketio.Channel, args Message) {
-		log.Println("--- Got chat message: ", args)
-	})
-	if err != nil {
-		log.Fatal(err)
+	b.Hs["messages.new"] = func (msg bot.Message) {
+		mg := msg["data"].(map[string]interface{})
+		if mg["senderId"] != b.Id {
+			fmt.Println("b -",mg["message"].(string))
+			if b1.Dialog_id != 0 && b2.Dialog_id != 0 && b.Dialog_id != 0 {
+				b1.SendMessage(mg["message"].(string))
+				b2.SendMessage(mg["message"].(string))
+			}
+		}
 	}
-
-	err = c.On(gosocketio.OnDisconnection, func(h *gosocketio.Channel) {
-		log.Fatal("Disconnected")
-	})
-	if err != nil {
-		log.Fatal(err)
+	b.Hs["dialog.closed"] = func (msg bot.Message) {
+		fmt.Println("b - dialog closed")
+		b.Dialog_id = 0
+		b.StartSearch()
 	}
 
-	err = c.On(gosocketio.OnConnection, func(h *gosocketio.Channel) {
-		log.Println("Connected c")
-		c.Emit("action", map[string]interface{}{"action": "auth.getToken", "deviceType":2})
-	})
-	if err != nil {
-		log.Fatal(err)
+	b1.Hs["auth.successToken"] = func(msg bot.Message) {
+		fmt.Println("b1 - success token, great job!")
+		mg := msg["data"].(map[string]interface{})
+		b1.Id = mg["id"].(float64)
+		b1.Dialog_id = 0
+		b1.StartSearch()
+	}
+	b1.Hs["dialog.opened"] = func(msg bot.Message) {
+		mg := msg["data"].(map[string]interface{})
+		b1.Dialog_id = mg["id"].(float64)
+		fmt.Println("b1 dialog opened")
+	}
+	b1.Hs["messages.new"] = func (msg bot.Message) {
+		mg := msg["data"].(map[string]interface{})
+		if mg["senderId"] != b1.Id {
+			fmt.Println("b1 -",mg["message"].(string))
+			if b.Dialog_id != 0 && b2.Dialog_id != 0 && b1.Dialog_id != 0{
+				b.SendMessage(mg["message"].(string))
+				b2.SendMessage(mg["message"].(string))
+			}
+		}
+	}
+	b1.Hs["dialog.closed"] = func (msg bot.Message) {
+		fmt.Println("b1 dialog closed")
+		b1.Dialog_id = 0
+		b1.StartSearch()
 	}
 
-	reader := bufio.NewReader(os.Stdin)
+	//b.SetCookie("")
+	//go b.Connect("")
 
-	var args []string
+	//b1.SetCookie("")
+	//go b1.Connect("")
+
+	reader := bufio.NewReader(os.Stdin)reader := bufio.NewReader(os.Stdin)
 	for {
-		fmt.Print("-> ")
 		text, _ := reader.ReadString('\n')
-		args = strings.Split(text, " ")
-		fmt.Println("args:",string(args[0]))
-		// if you input "track true", the server will send you data about online users in chat	
-		if string(args[0]) == "track" {
-			c.Emit("action", map[string]string{"action":"online.track","on":string(args[1])})
+		args := strings.Split(text, " ")
+		switch string(args[0]) {
+			case "track":
+				b.Track()
+			case "untrack":
+				b.UnTrack()
+			case "search":
+				b.StartSearch()
+			case "leave":
+				b.LeaveDialog()
+				b1.LeaveDialog()
+				b2.LeaveDialog()
+			case "close":
+				b.Close();
+				b1.Close();
+				b2.Close();
+				break
+			default:
+				wo := ""
+				for _, word := range args {
+					wo += word+" "
+				}
+				b.SendMessage(wo)
+				b1.SendMessage(wo)
 		}
 	}
 }
