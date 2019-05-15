@@ -27,9 +27,8 @@ func main() {
 		mg := msg["data"].(map[string]interface{})
 		if mg["senderId"] != b.Id {
 			fmt.Println("b -",mg["message"].(string))
-			if b1.Dialog_id != 0 && b2.Dialog_id != 0 && b.Dialog_id != 0 {
+			if b1.Dialog_id != 0 && b.Dialog_id != 0 {
 				b1.SendMessage(mg["message"].(string))
-				b2.SendMessage(mg["message"].(string))
 			}
 		}
 	}
@@ -55,9 +54,8 @@ func main() {
 		mg := msg["data"].(map[string]interface{})
 		if mg["senderId"] != b1.Id {
 			fmt.Println("b1 -",mg["message"].(string))
-			if b.Dialog_id != 0 && b2.Dialog_id != 0 && b1.Dialog_id != 0{
+			if b.Dialog_id != 0 && b1.Dialog_id != 0{
 				b.SendMessage(mg["message"].(string))
-				b2.SendMessage(mg["message"].(string))
 			}
 		}
 	}
@@ -68,30 +66,31 @@ func main() {
 	}
 
 	//b.SetCookie("")
-	//go b.Connect("")
+	go b.Connect("")
 
 	//b1.SetCookie("")
-	//go b1.Connect("")
+	go b1.Connect("")
 
-	reader := bufio.NewReader(os.Stdin)reader := bufio.NewReader(os.Stdin)
+	reader := bufio.NewReader(os.Stdin)
 	for {
 		text, _ := reader.ReadString('\n')
 		args := strings.Split(text, " ")
 		switch string(args[0]) {
 			case "track":
 				b.Track()
+				b1.Track()
 			case "untrack":
 				b.UnTrack()
+				b1.UnTrack()
 			case "search":
 				b.StartSearch()
+				b1.StartSearch()
 			case "leave":
 				b.LeaveDialog()
 				b1.LeaveDialog()
-				b2.LeaveDialog()
 			case "close":
 				b.Close();
 				b1.Close();
-				b2.Close();
 				break
 			default:
 				wo := ""
