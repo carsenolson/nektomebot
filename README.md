@@ -9,7 +9,7 @@ Connection wrapper written in golang. This project contains one file bot/bot.go 
 
 To get the trusted token you need to solve the captcha by yourself. First open developer tools in your browser and go to the address http://nekto.me/chat/#/
 Open netowork tab and set filter to websockets. There is only one websocket connection, open this and go to messages tab. Pick third message and copy the token.
-![]("images/token.png")
+![](images/token.png)
 
 After that start search interlocutor, click the green button. Solve the captcha. After solving you got the trunsted token.
 
