@@ -136,7 +136,7 @@ func (bot *Bot) LeaveDialog() {
 }
 
 func (bot *Bot) StartSearch() {
-	bot.Cli.Emit("action", map[string]interface{}{"action":"search.run","myAge":[]int{18, 21},"mySex":"F","wishAge":*new([]int),"wishSex":"M"})
+	bot.Cli.Emit("action", map[string]interface{}{"action":"search.run","myAge":[]int{18, 21},"mySex":"M","wishAge":[][]int{{18,21}},"wishSex":"F"})
 }
 
 func (bot *Bot) Track() {
