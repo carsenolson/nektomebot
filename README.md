@@ -13,6 +13,18 @@ Open netowork tab and set filter to websockets. There is only one websocket conn
 
 After that start search interlocutor, click the green button. Solve the captcha. After solving you got the trunsted token.
 
+# Installation
+
+'''
+git clone "https://github.com/carsenolson/nektomebot.git"
+go build -o main main.go
+'''
+To start chatting you can grab created token from directory tokens/ file tokens, each token is separated by ";". But it's not safe, this tokens are public so every user can use them.
+For example:
+'''
+./main ead236099a6a46d631a7f4c6f5b91842eb8f71e87237d149dff9fca7971009cb
+'''
+
 # JSON messages docs
 
 The structures and discriptions of nektome JSON messages you can find at http://im.nekto.me/docs/
