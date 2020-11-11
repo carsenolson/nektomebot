@@ -19,6 +19,7 @@ type Bot struct {
 	Headers http.Header
 	Hs HandlerSet
 	Id, Dialog_id float64
+  Index string
 }
 
 func NewBot() (*Bot) {

@@ -13,7 +13,6 @@ import (
 func main() {
   var tokens []string
   var bots []*bot.Bot
-	b := bot.NewBot()
 
   file, err := os.Open("tokens/tokens")
   if err != nil {
@@ -32,8 +31,9 @@ func main() {
   }
 
   for i, b := range bots {
+    b.Index = strconv.Itoa(i)
     b.Hs["auth.successToken"] = func(msg bot.Message) {
-      fmt.Println("b"+strconv.Itoa(i)+" - success token, great job!")
+      fmt.Println("b"+b.Index+" - success token, great job!")
       mg := msg["data"].(map[string]interface{})
       b.Id = mg["id"].(float64)
       b.Dialog_id = 0
@@ -42,10 +42,10 @@ func main() {
     b.Hs["dialog.opened"] = func(msg bot.Message) {
       mg := msg["data"].(map[string]interface{})
       b.Dialog_id = mg["id"].(float64)
-      fmt.Println("b"+strconv.Itoa(i)+" - dialog opened")
+      fmt.Println("b"+b.Index+" - dialog opened")
     }
-    b.Hs["dialog.closed"] = func (msg bot.Message) {
-      fmt.Println("b"+strconv.Itoa(i)+" - dialog closed")
+    b.Hs["dialog.closed"] = func(msg bot.Message) {
+      fmt.Println("b"+b.Index+" - dialog closed")
       b.Dialog_id = 0
       b.StartSearch()
     }
@@ -53,42 +53,46 @@ func main() {
       mg := msg["data"].(map[string]interface{})
       if mg["senderId"] != b.Id {
         fmt.Println(mg["message"].(string))
-        for ii, bot := range bots {
-          if bot.Dialog_id != 0 {
-            bot.SendMessage(strconv.Itoa(ii)+" "+mg["message"].(string))
+        for _, bb := range bots {
+          if bb.Dialog_id != 0 {
+            bb.SendMessage(bb.Index+" "+mg["message"].(string))
           }
         }
       }
     }
-  }
-  for i, bot := range bots {
-    go bot.Connect(tokens[i])
+    fmt.Println(b.Hs["auth.successToken"])
   }
 
+  //for i, b := range bots {
+  //  fmt.Println(b.Index, b.Hs["auth.successToken"], b.Hs["message.new"], tokens[i])
+  //}
+  //for i, b := range bots {
+  //  go b.Connect(tokens[i])
+  //}
 	reader := bufio.NewReader(os.Stdin)
 	for {
 		text, _ := reader.ReadString('\n')
 		args := strings.Split(text, " ")
 		switch string(args[0]) {
 			case "track":
-				b.Track()
+				bots[0].Track()
 			case "untrack":
-				b.UnTrack()
+				bots[0].UnTrack()
 			case "search":
-				b.StartSearch()
+				bots[0].StartSearch()
 			case "leave":
-				b.LeaveDialog()
+				bots[0].LeaveDialog()
 			case "close":
-				b.Close()
+				bots[0].Close()
 			case "connect":
-				b.Connect(os.Args[1])
+				bots[0].Connect(os.Args[1])
 				break
 			default:
 				wo := ""
 				for _, word := range args {
 					wo += word+" "
 				}
-				b.SendMessage(wo)
+				bots[0].SendMessage(wo)
 		}
 	}
 }
