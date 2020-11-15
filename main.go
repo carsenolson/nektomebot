@@ -1,13 +1,11 @@
 package main
 
 import (
-	"./bot"
-	"fmt"
+  "./bot"
 	"strings"
 	"bufio"
 	"os"
   "log"
-  "strconv"
 )
 
 func main() {
@@ -30,45 +28,14 @@ func main() {
     log.Fatal(err)
   }
 
-  for i, b := range bots {
-    b.Index = strconv.Itoa(i)
-    b.Hs["auth.successToken"] = func(msg bot.Message) {
-      fmt.Println("b"+b.Index+" - success token, great job!")
-      mg := msg["data"].(map[string]interface{})
-      b.Id = mg["id"].(float64)
-      b.Dialog_id = 0
-      b.StartSearch()
-    }
-    b.Hs["dialog.opened"] = func(msg bot.Message) {
-      mg := msg["data"].(map[string]interface{})
-      b.Dialog_id = mg["id"].(float64)
-      fmt.Println("b"+b.Index+" - dialog opened")
-    }
-    b.Hs["dialog.closed"] = func(msg bot.Message) {
-      fmt.Println("b"+b.Index+" - dialog closed")
-      b.Dialog_id = 0
-      b.StartSearch()
-    }
-    b.Hs["message.new"] = func(msg bot.Message) {
-      mg := msg["data"].(map[string]interface{})
-      if mg["senderId"] != b.Id {
-        fmt.Println(mg["message"].(string))
-        for _, bb := range bots {
-          if bb.Dialog_id != 0 {
-            bb.SendMessage(bb.Index+" "+mg["message"].(string))
-          }
-        }
-      }
-    }
-    fmt.Println(b.Hs["auth.successToken"])
+  for _, b := range bots {
+    b.Bots = &bots;
   }
 
-  //for i, b := range bots {
-  //  fmt.Println(b.Index, b.Hs["auth.successToken"], b.Hs["message.new"], tokens[i])
-  //}
-  //for i, b := range bots {
-  //  go b.Connect(tokens[i])
-  //}
+  for i, b := range bots {
+   b.Connect(tokens[i])
+  }
+
 	reader := bufio.NewReader(os.Stdin)
 	for {
 		text, _ := reader.ReadString('\n')

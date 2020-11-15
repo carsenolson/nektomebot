@@ -10,17 +10,20 @@ import (
 )
 
 type Message map[string]interface{}
-type Handler func(msg Message)
+//type Handler func(msg Message)
 
-type HandlerSet map[string]Handler
+type HandlerSet map[string]interface{}
 
 type Bot struct {
 	Cli *gosocketio.Client
 	Headers http.Header
 	Hs HandlerSet
 	Id, Dialog_id float64
-  Index string
+  StrId string
+  Bots *[]*Bot
 }
+
+//var bots []*Bot
 
 func NewBot() (*Bot) {
 	bot := new(Bot)
@@ -34,11 +37,15 @@ func NewBot() (*Bot) {
 	bot.Headers.Add("Origin", "http://nekto.me")
 	bot.Headers.Add("Host", "im.nekto.me")
 	bot.Headers.Add("User-Agent", "Mozilla/5.0 (X11; Darwin x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Mojave Chromium/73.0.3683.86 Chrome/73.0.3683.86 Safari/537.36")
+
 	// Init default Headers to headerSet
 	handlerSet["auth.successToken"] = func (msg Message) {
 		fmt.Println("success token, great job!")
 		mg := msg["data"].(map[string]interface{})
 		bot.Id = mg["id"].(float64)
+    bot.StrId = strconv.FormatFloat(bot.Id, 'E', -1, 64)
+    bot.Dialog_id = 0
+    bot.StartSearch()
 	}
 	handlerSet["error.code"] = func (msg Message) {
 		fmt.Println("error, look at this:", msg)
@@ -47,31 +54,40 @@ func NewBot() (*Bot) {
 		fmt.Println("captcha", msg)
 	}
 	handlerSet["search.success"] = func (msg Message) {
-		fmt.Println("searching for stranger...")
+		fmt.Println(bot.StrId+"searching for stranger...")
 	}
 	handlerSet["dialog.opened"] = func (msg Message) {
 		mg := msg["data"].(map[string]interface{})
 		bot.Dialog_id = mg["id"].(float64)
-		fmt.Println("dialog opened")
+		fmt.Println(bot.StrId+"dialog opened")
 	}
+
+  // *** useless for CLI interface ***
 	//handlerSet["dialog.typing"] = func (msg Message) {
 	//	fmt.Println("stranger typing")
 	//}
 	//handlerSet["messages.reads"] = func (msg Message) {
 	//	fmt.Println("stranger reads")
 	//}
-	handlerSet["messages.new"] = func (msg Message) {
+
+	handlerSet["messages.new"] = func (msg Message, botsSlice *[]*Bot) {
 		mg := msg["data"].(map[string]interface{})
 		if mg["senderId"] != bot.Id {
 			fmt.Println(mg["message"].(string))
+      for _, bb := range (*botsSlice){
+        if bb.Dialog_id != 0 {
+          bb.SendMessage(bb.StrId+" "+mg["message"].(string))
+        }
+      }
 		}
 	}
+
 	handlerSet["dialog.closed"] = func (msg Message) {
-		fmt.Println("dialog closed")
+		fmt.Println(bot.StrId+"dialog closed")
+    bot.Dialog_id = 0
+    bot.StartSearch()
 	}
-	handlerSet["unexpected"] = func (msg Message) {
-		fmt.Println("bot doesn't know about this messge type, you should add it to bot.hs", msg)
-	}
+
 	bot.Hs = handlerSet
 	return bot
 }
@@ -96,10 +112,13 @@ func (bot *Bot) Connect(token string) error {
 	}
 
 	err = c.On("notice", func(h *gosocketio.Channel, args Message) {
-		if bot.Hs[args["notice"].(string)] != nil {
-			bot.Hs[args["notice"].(string)](args)
-		}
+		if bot.Hs[args["notice"].(string)] != nil && bot.Hs[args["notice"].(string)] == "messages.new" {
+			bot.Hs[args["notice"].(string)].(func(Message, *[]*Bot))(args, bot.Bots)
+		} else if bot.Hs[args["notice"].(string)] != nil {
+		  bot.Hs[args["notice"].(string)].(func(Message))(args)
+    }
 	})
+
 	if err != nil {
 		return err
 	}
