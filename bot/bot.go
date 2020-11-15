@@ -18,7 +18,7 @@ type Bot struct {
 	Headers http.Header
 	Hs HandlerSet
 	Id, Dialog_id float64
-  StrId string
+  //StrId string
   Bots *[]*Bot
 }
 
@@ -40,7 +40,7 @@ func NewBot() (*Bot) {
 		fmt.Println("success token, great job!")
 		mg := msg["data"].(map[string]interface{})
 		bot.Id = mg["id"].(float64)
-    bot.StrId = strconv.FormatFloat(bot.Id, 'E', -1, 64)
+    //bot.StrId = strconv.FormatFloat(bot.Id, 'E', -1, 64)
     bot.Dialog_id = 0
     bot.StartSearch()
 	}
@@ -51,12 +51,13 @@ func NewBot() (*Bot) {
 		fmt.Println("captcha", msg)
 	}
 	handlerSet["search.success"] = func (msg Message) {
-		fmt.Println(bot.StrId+"searching for stranger...")
+		fmt.Println("searching for stranger...")
 	}
 	handlerSet["dialog.opened"] = func (msg Message) {
 		mg := msg["data"].(map[string]interface{})
 		bot.Dialog_id = mg["id"].(float64)
-		fmt.Println(bot.StrId+"dialog opened")
+		fmt.Println("dialog opened")
+    bot.SendMessage("Добро пожаловать в общий чат, исходник -> github olsoncarsen/nektomebot")
 	}
 
   // *** useless for CLI interface ***
@@ -73,14 +74,14 @@ func NewBot() (*Bot) {
 			fmt.Println(mg["message"].(string))
       for _, bb := range (*botsSlice){
         if bb.Dialog_id != 0 {
-          bb.SendMessage(bb.StrId+" "+mg["message"].(string))
+          bb.SendMessage(mg["message"].(string))
         }
       }
 		}
 	}
 
 	handlerSet["dialog.closed"] = func (msg Message) {
-		fmt.Println(bot.StrId+"dialog closed")
+		fmt.Println("dialog closed")
     bot.Dialog_id = 0
     bot.StartSearch()
 	}
@@ -171,4 +172,3 @@ func (bot *Bot) UnTrack() {
 func (bot *Bot) Close() {
 	bot.Cli.Close()
 }
-
