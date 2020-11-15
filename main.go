@@ -33,7 +33,7 @@ func main() {
   }
 
   for i, b := range bots {
-   b.Connect(tokens[i])
+    go b.Connect(tokens[i])
   }
 
 	reader := bufio.NewReader(os.Stdin)

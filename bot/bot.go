@@ -10,7 +10,6 @@ import (
 )
 
 type Message map[string]interface{}
-//type Handler func(msg Message)
 
 type HandlerSet map[string]interface{}
 
@@ -22,8 +21,6 @@ type Bot struct {
   StrId string
   Bots *[]*Bot
 }
-
-//var bots []*Bot
 
 func NewBot() (*Bot) {
 	bot := new(Bot)
@@ -112,10 +109,14 @@ func (bot *Bot) Connect(token string) error {
 	}
 
 	err = c.On("notice", func(h *gosocketio.Channel, args Message) {
-		if bot.Hs[args["notice"].(string)] != nil && bot.Hs[args["notice"].(string)] == "messages.new" {
-			bot.Hs[args["notice"].(string)].(func(Message, *[]*Bot))(args, bot.Bots)
-		} else if bot.Hs[args["notice"].(string)] != nil {
-		  bot.Hs[args["notice"].(string)].(func(Message))(args)
+    action := args["notice"].(string)
+    if bot.Hs[action] != nil {
+      switch action {
+        case "messages.new":
+          bot.Hs[args["notice"].(string)].(func(Message, *[]*Bot))(args, bot.Bots)
+        default:
+          bot.Hs[args["notice"].(string)].(func(Message))(args)
+      }
     }
 	})
 
